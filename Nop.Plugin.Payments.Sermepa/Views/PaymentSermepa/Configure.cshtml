@@ -1,0 +1,114 @@
+﻿@{
+    Layout = "";
+}
+@model ConfigurationModel
+@using Nop.Plugin.Payments.Sermepa.Models;
+@using Nop.Web.Framework;
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <table class="adminContent">
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.NombreComercio):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.NombreComercio)
+                @Html.ValidationMessageFor(model => model.NombreComercio)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Titular):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Titular)
+                @Html.ValidationMessageFor(model => model.Titular)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Producto):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Producto)
+                @Html.ValidationMessageFor(model => model.Producto)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <hr />
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.FUC):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.FUC)
+                @Html.ValidationMessageFor(model => model.FUC)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Terminal):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Terminal)
+                @Html.ValidationMessageFor(model => model.Terminal)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Moneda):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Moneda)
+                @Html.ValidationMessageFor(model => model.Moneda)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.ClaveReal):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.ClaveReal)
+                @Html.ValidationMessageFor(model => model.ClaveReal)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.ClavePruebas):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.ClavePruebas)
+                @Html.ValidationMessageFor(model => model.ClavePruebas)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Pruebas):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Pruebas)
+                @Html.ValidationMessageFor(model => model.Pruebas)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.AdditionalFee):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.AdditionalFee)
+                @Html.ValidationMessageFor(model => model.AdditionalFee)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button type="submit" name="save" value="save" class="k-button">
+                    Save</button>
+            </td>
+        </tr>
+    </table>
+    
+}
