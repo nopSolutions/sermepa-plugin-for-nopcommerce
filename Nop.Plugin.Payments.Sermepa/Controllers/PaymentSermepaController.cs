@@ -45,17 +45,19 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         [ChildActionOnly]
         public ActionResult Configure()
         {
-            var model = new ConfigurationModel();
-            model.NombreComercio = _sermepaPaymentSettings.NombreComercio;
-            model.Titular = _sermepaPaymentSettings.Titular;
-            model.Producto = _sermepaPaymentSettings.Producto;
-            model.FUC = _sermepaPaymentSettings.FUC;
-            model.Terminal = _sermepaPaymentSettings.Terminal;
-            model.Moneda = _sermepaPaymentSettings.Moneda;
-            model.ClaveReal = _sermepaPaymentSettings.ClaveReal;
-            model.ClavePruebas = _sermepaPaymentSettings.ClavePruebas;
-            model.Pruebas = _sermepaPaymentSettings.Pruebas;
-            model.AdditionalFee = _sermepaPaymentSettings.AdditionalFee;
+            var model = new ConfigurationModel
+            {
+                NombreComercio = _sermepaPaymentSettings.NombreComercio,
+                Titular = _sermepaPaymentSettings.Titular,
+                Producto = _sermepaPaymentSettings.Producto,
+                FUC = _sermepaPaymentSettings.FUC,
+                Terminal = _sermepaPaymentSettings.Terminal,
+                Moneda = _sermepaPaymentSettings.Moneda,
+                ClaveReal = _sermepaPaymentSettings.ClaveReal,
+                ClavePruebas = _sermepaPaymentSettings.ClavePruebas,
+                Pruebas = _sermepaPaymentSettings.Pruebas,
+                AdditionalFee = _sermepaPaymentSettings.AdditionalFee
+            };
 
             return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/Configure.cshtml", model);
         }
@@ -87,8 +89,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         [ChildActionOnly]
         public ActionResult PaymentInfo()
         {
-            var model = new PaymentInfoModel();
-            return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/PaymentInfo.cshtml", model);
+            return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/PaymentInfo.cshtml");
         }
 
         [NonAction]
@@ -116,25 +117,23 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             //_logger.Information("TPV SERMEPA: Host " + Request.UserHostName);
 
             //ID de Pedido
-            string orderId = Request["Ds_Order"];
-            string strDs_Merchant_Order = Request["Ds_Order"];
+            var orderId = Request["Ds_Order"];
+            var strDs_Merchant_Order = Request["Ds_Order"];
 
-            string strDs_Merchant_Amount = Request["Ds_Amount"];
-            string strDs_Merchant_MerchantCode = Request["Ds_MerchantCode"];
-            string strDs_Merchant_Currency = Request["Ds_Currency"];
+            var strDs_Merchant_Amount = Request["Ds_Amount"];
+            var strDs_Merchant_MerchantCode = Request["Ds_MerchantCode"];
+            var strDs_Merchant_Currency = Request["Ds_Currency"];
 
             //Respuesta del TPV
-            string str_Merchant_Response = Request["Ds_Response"];
-            int Ds_Response = Convert.ToInt32(Request["Ds_Response"]);
+            var str_Merchant_Response = Request["Ds_Response"];
+            var dsResponse = Convert.ToInt32(Request["Ds_Response"]);
 
             //Clave
-            bool pruebas = _sermepaPaymentSettings.Pruebas;
-            string clave = "";
-            if (pruebas) { clave = _sermepaPaymentSettings.ClavePruebas; }
-            else { clave = _sermepaPaymentSettings.ClaveReal; };
+            var pruebas = _sermepaPaymentSettings.Pruebas;
+            var clave = pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
             //Calculo de la firma
-            string SHA = string.Format("{0}{1}{2}{3}{4}{5}",
+            var sha = string.Format("{0}{1}{2}{3}{4}{5}",
                 strDs_Merchant_Amount,
                 strDs_Merchant_Order,
                 strDs_Merchant_MerchantCode,
@@ -142,20 +141,19 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 str_Merchant_Response,
                 clave);
 
-            byte[] SHAresult;
             SHA1 shaM = new SHA1Managed();
-            SHAresult = shaM.ComputeHash(Encoding.Default.GetBytes(SHA));
-            string SHAresultStr = BitConverter.ToString(SHAresult).Replace("-", "");
+            var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
+            var shaResultStr = BitConverter.ToString(shaResult).Replace("-", "");
 
             //Firma enviada
-            string signature = CommonHelper.EnsureNotNull(Request["Ds_Signature"]);
+            var signature = CommonHelper.EnsureNotNull(Request["Ds_Signature"]);
 
             //Comprobamos la integridad de las comunicaciones con las claves
             //LogManager.InsertLog(LogTypeEnum.OrderError, "TPV SERMEPA: Clave generada", "CLAVE GENERADA: " + SHAresultStr);
             //LogManager.InsertLog(LogTypeEnum.OrderError, "TPV SERMEPA: Clave obtenida", "CLAVE OBTENIDA: " + signature);
-            if (!signature.Equals(SHAresultStr))
+            if (!signature.Equals(shaResultStr))
             {
-                _logger.Error("TPV SERMEPA: Clave incorrecta. Las claves enviada y generada no coinciden: " + SHAresultStr + " != " + signature);
+                _logger.Error("TPV SERMEPA: Clave incorrecta. Las claves enviada y generada no coinciden: " + shaResultStr + " != " + signature);
 
                 return RedirectToAction("Index", "Home", new { area = "" });
             }
@@ -166,7 +164,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 throw new NopException(string.Format("El pedido de ID {0} no existe", orderId));
 
             //Actualizamos el pedido
-            if (Ds_Response > -1 && Ds_Response < 100)
+            if (dsResponse > -1 && dsResponse < 100)
             {
                 //Lo marcamos como pagado
                 if (_orderProcessingService.CanMarkOrderAsPaid(order))
@@ -175,29 +173,27 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 }
 
                 //order note
-                order.OrderNotes.Add(new OrderNote()
+                order.OrderNotes.Add(new OrderNote
                 {
-                    Note = "Información del pago: " + Request.Form.ToString(),
+                    Note = "Información del pago: " + Request.Form,
                     DisplayToCustomer = false,
                     CreatedOnUtc = DateTime.UtcNow
                 });
                 _orderService.UpdateOrder(order);
                 return RedirectToRoute("CheckoutCompleted", new { orderId = order.Id });
             }
-            else
-            {
-                _logger.Error("TPV SERMEPA: Pago no autorizado con ERROR: " + Ds_Response);
 
-                //order note
-                order.OrderNotes.Add(new OrderNote()
-                {
-                    Note = "!!! PAGO DENEGADO !!! " + Request.Form.ToString(),
-                    DisplayToCustomer = false,
-                    CreatedOnUtc = DateTime.UtcNow
-                });
-                _orderService.UpdateOrder(order);
-                return RedirectToAction("Index", "Home", new { area = "" });
-            }
+            _logger.Error("TPV SERMEPA: Pago no autorizado con ERROR: " + dsResponse);
+
+            //order note
+            order.OrderNotes.Add(new OrderNote
+            {
+                Note = "!!! PAGO DENEGADO !!! " + Request.Form,
+                DisplayToCustomer = false,
+                CreatedOnUtc = DateTime.UtcNow
+            });
+            _orderService.UpdateOrder(order);
+            return RedirectToAction("Index", "Home", new { area = "" });
         }
 
         [ValidateInput(false)]

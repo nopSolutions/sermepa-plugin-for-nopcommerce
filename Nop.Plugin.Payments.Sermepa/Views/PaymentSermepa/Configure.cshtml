@@ -6,109 +6,123 @@
 @using Nop.Web.Framework;
 @using (Html.BeginForm())
 {
+
     @Html.AntiForgeryToken()
-    <table class="adminContent">
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.NombreComercio):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.NombreComercio)
-                @Html.ValidationMessageFor(model => model.NombreComercio)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.Titular):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Titular)
-                @Html.ValidationMessageFor(model => model.Titular)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.Producto):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Producto)
-                @Html.ValidationMessageFor(model => model.Producto)
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.NombreComercio)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.NombreComercio)
+                        @Html.ValidationMessageFor(model => model.NombreComercio)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Titular)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Titular)
+                        @Html.ValidationMessageFor(model => model.Titular)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Producto)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Producto)
+                        @Html.ValidationMessageFor(model => model.Producto)
+                    </div>
+                </div>
+
                 <hr />
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.FUC):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.FUC)
-                @Html.ValidationMessageFor(model => model.FUC)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.Terminal):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Terminal)
-                @Html.ValidationMessageFor(model => model.Terminal)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.Moneda):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Moneda)
-                @Html.ValidationMessageFor(model => model.Moneda)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.ClaveReal):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.ClaveReal)
-                @Html.ValidationMessageFor(model => model.ClaveReal)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.ClavePruebas):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.ClavePruebas)
-                @Html.ValidationMessageFor(model => model.ClavePruebas)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.Pruebas):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Pruebas)
-                @Html.ValidationMessageFor(model => model.Pruebas)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.AdditionalFee):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.AdditionalFee)
-                @Html.ValidationMessageFor(model => model.AdditionalFee)
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <button type="submit" name="save" value="save" class="k-button">
-                    Save</button>
-            </td>
-        </tr>
-    </table>
-    
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.FUC)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.FUC)
+                        @Html.ValidationMessageFor(model => model.FUC)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Terminal)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Terminal)
+                        @Html.ValidationMessageFor(model => model.Terminal)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Moneda)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Moneda)
+                        @Html.ValidationMessageFor(model => model.Moneda)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ClaveReal)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.ClaveReal)
+                        @Html.ValidationMessageFor(model => model.ClaveReal)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ClavePruebas)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.ClavePruebas)
+                        @Html.ValidationMessageFor(model => model.ClavePruebas)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.Pruebas)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Pruebas)
+                        @Html.ValidationMessageFor(model => model.Pruebas)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.AdditionalFee)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.AdditionalFee)
+                        @Html.ValidationMessageFor(model => model.AdditionalFee)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        &nbsp;
+                    </div>
+                    <div class="col-md-9">
+                        <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }

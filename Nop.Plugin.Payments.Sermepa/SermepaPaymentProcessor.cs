@@ -1,5 +1,4 @@
 ﻿//Contributor: Noel Revuelta
-
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -64,8 +63,7 @@ namespace Nop.Plugin.Payments.Sermepa
         /// <returns>Process payment result</returns>
         public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
         {
-            var result = new ProcessPaymentResult();
-            result.NewPaymentStatus = PaymentStatus.Pending;
+            var result = new ProcessPaymentResult { NewPaymentStatus = PaymentStatus.Pending };
             return result;
         }
 
@@ -76,50 +74,42 @@ namespace Nop.Plugin.Payments.Sermepa
         public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
             //Notificación On-Line
-            string strDs_Merchant_MerchantURL = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Return";
+            var strDs_Merchant_MerchantURL = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Return";
 
             //URL OK
-            string strDs_Merchant_UrlOK = _webHelper.GetStoreLocation(false) + "checkout/completed";
+            var strDs_Merchant_UrlOK = _webHelper.GetStoreLocation(false) + "checkout/completed";
 
             //URL KO
-            string strDs_Merchant_UrlKO = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Error";
+            var strDs_Merchant_UrlKO = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Error";
 
             //Numero de pedido
             //You have to change the id of the orders table to begin with a number of at least 4 digits.
-            string strDs_Merchant_Order = postProcessPaymentRequest.Order.Id.ToString("0000");
+            var strDs_Merchant_Order = postProcessPaymentRequest.Order.Id.ToString("0000");
 
             //Nombre del comercio
-            string strDs_Merchant_MerchantName = _sermepaPaymentSettings.NombreComercio;
+            var strDs_Merchant_MerchantName = _sermepaPaymentSettings.NombreComercio;
 
             //Importe
-            string amount = ((int)Convert.ToInt64(postProcessPaymentRequest.Order.OrderTotal * 100)).ToString();
-            string strDs_Merchant_Amount = amount;
+            var amount = ((int)Convert.ToInt64(postProcessPaymentRequest.Order.OrderTotal * 100)).ToString();
+            var strDs_Merchant_Amount = amount;
 
             //Código de comercio
-            string strDs_Merchant_MerchantCode = _sermepaPaymentSettings.FUC;
+            var strDs_Merchant_MerchantCode = _sermepaPaymentSettings.FUC;
 
             //Moneda
-            string strDs_Merchant_Currency = _sermepaPaymentSettings.Moneda;
+            var strDs_Merchant_Currency = _sermepaPaymentSettings.Moneda;
 
             //Terminal
-            string strDs_Merchant_Terminal = _sermepaPaymentSettings.Terminal;
+            var strDs_Merchant_Terminal = _sermepaPaymentSettings.Terminal;
 
             //Tipo de transaccion (0 - Autorización)
-            string strDs_Merchant_TransactionType = "0";
+            var strDs_Merchant_TransactionType = "0";
 
             //Clave
-            string clave = "";
-            if (_sermepaPaymentSettings.Pruebas)
-            {
-                clave = _sermepaPaymentSettings.ClavePruebas;
-            }
-            else
-            {
-                clave = _sermepaPaymentSettings.ClaveReal;
-            }
+            var clave = _sermepaPaymentSettings.Pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
             //Calculo de la firma
-            string SHA = string.Format("{0}{1}{2}{3}{4}{5}{6}",
+            var sha = string.Format("{0}{1}{2}{3}{4}{5}{6}",
                 strDs_Merchant_Amount,
                 strDs_Merchant_Order,
                 strDs_Merchant_MerchantCode,
@@ -128,15 +118,16 @@ namespace Nop.Plugin.Payments.Sermepa
                 strDs_Merchant_MerchantURL,
                 clave);
 
-            byte[] SHAresult;
             SHA1 shaM = new SHA1Managed();
-            SHAresult = shaM.ComputeHash(Encoding.Default.GetBytes(SHA));
-            string SHAresultStr = BitConverter.ToString(SHAresult).Replace("-", "");
+            var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
+            var shaResultStr = BitConverter.ToString(shaResult).Replace("-", "");
 
             //Creamos el POST
-            var remotePostHelper = new RemotePost();
-            remotePostHelper.FormName = "form1";
-            remotePostHelper.Url = GetSermepaUrl();
+            var remotePostHelper = new RemotePost
+            {
+                FormName = "form1",
+                Url = GetSermepaUrl()
+            };
 
             remotePostHelper.Add("Ds_Merchant_Amount", strDs_Merchant_Amount);
             remotePostHelper.Add("Ds_Merchant_Currency", strDs_Merchant_Currency);
@@ -144,7 +135,7 @@ namespace Nop.Plugin.Payments.Sermepa
             remotePostHelper.Add("Ds_Merchant_MerchantCode", strDs_Merchant_MerchantCode);
             remotePostHelper.Add("Ds_Merchant_TransactionType", strDs_Merchant_TransactionType);
             remotePostHelper.Add("Ds_Merchant_MerchantURL", strDs_Merchant_MerchantURL);
-            remotePostHelper.Add("Ds_Merchant_MerchantSignature", SHAresultStr);
+            remotePostHelper.Add("Ds_Merchant_MerchantSignature", shaResultStr);
             remotePostHelper.Add("Ds_Merchant_Terminal", strDs_Merchant_Terminal);
             remotePostHelper.Add("Ds_Merchant_MerchantName", strDs_Merchant_MerchantName);
             remotePostHelper.Add("Ds_Merchant_UrlOK", strDs_Merchant_UrlOK);
@@ -259,7 +250,7 @@ namespace Nop.Plugin.Payments.Sermepa
         {
             actionName = "Configure";
             controllerName = "PaymentSermepa";
-            routeValues = new RouteValueDictionary() { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
+            routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
         }
 
         /// <summary>
@@ -272,7 +263,7 @@ namespace Nop.Plugin.Payments.Sermepa
         {
             actionName = "PaymentInfo";
             controllerName = "PaymentSermepa";
-            routeValues = new RouteValueDictionary() { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
+            routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
         }
 
         public Type GetControllerType()
