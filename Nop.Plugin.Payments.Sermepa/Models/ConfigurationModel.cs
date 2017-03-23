@@ -1,38 +1,38 @@
-﻿using System.ComponentModel;
+﻿using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc;
 
 namespace Nop.Plugin.Payments.Sermepa.Models
 {
     public class ConfigurationModel : BaseNopModel
     {
-        [DisplayName("Nombre del comercio")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.NombreComercio")]
         public string NombreComercio { get; set; }
 
-        [DisplayName("Nombre y Apellidos del titular")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.Titular")]
         public string Titular { get; set; }
 
-        [DisplayName("Descripción del producto")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.Producto")]
         public string Producto { get; set; }
 
-        [DisplayName("FUC comercio")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.FUC")]
         public string FUC { get; set; }
 
-        [DisplayName("Terminal")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.Terminal")]
         public string Terminal { get; set; }
 
-        [DisplayName("Moneda")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.Moneda")]
         public string Moneda { get; set; }
 
-        [DisplayName("Clave Real")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.ClaveReal")]
         public string ClaveReal { get; set; }
 
-        [DisplayName("Clave Pruebas")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.ClavePruebas")]
         public string ClavePruebas { get; set; }
 
-        [DisplayName("En pruebas")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.Pruebas")]
         public bool Pruebas { get; set; }
 
-        [DisplayName("Additional fee")]
+        [NopResourceDisplayName("Plugins.Payments.Sermepa.AdditionalFee")]
         public decimal AdditionalFee { get; set; }
     }
 }

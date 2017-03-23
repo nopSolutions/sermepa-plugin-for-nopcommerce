@@ -59,7 +59,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 AdditionalFee = _sermepaPaymentSettings.AdditionalFee
             };
 
-            return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/Configure.cshtml", model);
+            return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
 
         [HttpPost]
@@ -83,13 +83,13 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             _sermepaPaymentSettings.AdditionalFee = model.AdditionalFee;
             _settingService.SaveSetting(_sermepaPaymentSettings);
 
-            return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/Configure.cshtml", model);
+            return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
 
         [ChildActionOnly]
         public ActionResult PaymentInfo()
         {
-            return View("~/Plugins/Payments.Sermepa/Views/PaymentSermepa/PaymentInfo.cshtml");
+            return View("~/Plugins/Payments.Sermepa/Views/PaymentInfo.cshtml");
         }
 
         [NonAction]

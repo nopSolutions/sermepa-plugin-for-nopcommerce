@@ -10,6 +10,7 @@ using Nop.Core.Domain.Payments;
 using Nop.Core.Plugins;
 using Nop.Plugin.Payments.Sermepa.Controllers;
 using Nop.Services.Configuration;
+using Nop.Services.Localization;
 using Nop.Services.Payments;
 using Nop.Web.Framework;
 
@@ -26,16 +27,20 @@ namespace Nop.Plugin.Payments.Sermepa
         private readonly ISettingService _settingService;
         private readonly IWebHelper _webHelper;
 
+        private readonly ILocalizationService _localizationService;
+
         #endregion
 
         #region Ctor
 
         public SermepaPaymentProcessor(SermepaPaymentSettings sermepaPaymentSettings,
-            ISettingService settingService, IWebHelper webHelper)
+            ISettingService settingService, IWebHelper webHelper,
+            ILocalizationService localizationService)
         {
             this._sermepaPaymentSettings = sermepaPaymentSettings;
             this._settingService = settingService;
             this._webHelper = webHelper;
+            this._localizationService = localizationService;
         }
 
         #endregion
@@ -288,7 +293,38 @@ namespace Nop.Plugin.Payments.Sermepa
             };
             _settingService.SaveSetting(settings);
 
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.NombreComercio", "Nombre del comercio");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.Titular", "Nombre y Apellidos del titular");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.Producto", "Descripción del producto");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.FUC", "FUC comercio");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.Terminal", "Terminal");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.Moneda", "Moneda");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.ClaveReal", "Clave Real");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.ClavePruebas", "Clave Pruebas");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.Pruebas", "En pruebas");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.AdditionalFee", "Additional fee"); 
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.RedirectionTip", "You will be redirected to Sermepa site to complete the order.");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.Sermepa.PaymentMethodDescription", "You will be redirected to Sermepa site to complete the order.");
+
             base.Install();
+        }
+
+        public override void Uninstall()
+        {
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.NombreComercio");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.Titular");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.Producto");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.FUC");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.Terminal");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.Moneda");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.ClaveReal");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.ClavePruebas");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.Pruebas");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.AdditionalFee");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.RedirectionTip");
+            this.DeletePluginLocaleResource("Plugins.Payments.Sermepa.PaymentMethodDescription");
+
+            base.Uninstall();
         }
 
         #endregion
@@ -367,6 +403,14 @@ namespace Nop.Plugin.Payments.Sermepa
         public bool SkipPaymentInfo
         {
             get { return false; }
+        }
+
+        /// <summary>
+        /// Gets a payment method description that will be displayed on checkout pages in the public store
+        /// </summary>
+        public string PaymentMethodDescription
+        {
+            get { return _localizationService.GetResource("Plugins.Payments.Sermepa.PaymentMethodDescription"); }
         }
 
         #endregion
