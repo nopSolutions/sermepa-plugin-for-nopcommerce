@@ -53,8 +53,8 @@ namespace Nop.Plugin.Payments.Sermepa
         /// <returns></returns>
         private string GetSermepaUrl()
         {
-            return _sermepaPaymentSettings.Pruebas ? "https://sis-t.sermepa.es:25443/sis/realizarPago" :
-                "https://sis.sermepa.es/sis/realizarPago";
+            return _sermepaPaymentSettings.Pruebas ? "https://sis-t.redsys.es:25443/sis/realizarPago" :
+                "https://sis.redsys.es/sis/realizarPago";
         }
 
         #endregion

@@ -1,7 +1,7 @@
 ﻿Group: Payment methods
 FriendlyName: Sermepa
 SystemName: Payments.Sermepa
-Version: 2.10
+Version: 2.11
 SupportedVersions: 3.90
 Author: Noel Revuelta, nopCommerce team
 DisplayOrder: 1
