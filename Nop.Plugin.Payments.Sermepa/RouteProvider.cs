@@ -1,27 +1,24 @@
-﻿using System.Web.Mvc;
-using System.Web.Routing;
-using Nop.Web.Framework.Mvc.Routes;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+using Nop.Web.Framework.Mvc.Routing;
 
 namespace Nop.Plugin.Payments.Sermepa
 {
     public partial class RouteProvider : IRouteProvider
     {
-        public void RegisterRoutes(RouteCollection routes)
+        public void RegisterRoutes(IRouteBuilder routeBuilder)
         {
             //Return
-            routes.MapRoute("Plugin.Payments.Sermepa.Return",
+            routeBuilder.MapRoute("Plugin.Payments.Sermepa.Return",
                  "Plugins/PaymentSermepa/Return",
-                 new { controller = "PaymentSermepa", action = "Return" },
-                 new[] { "Nop.Plugin.Payments.Sermepa.Controllers" }
-            );
+                 new { controller = "PaymentSermepa", action = "Return" });
 
             //Error
-            routes.MapRoute("Plugin.Payments.Sermepa.Error",
+            routeBuilder.MapRoute("Plugin.Payments.Sermepa.Error",
                  "Plugins/PaymentSermepa/Error",
-                 new { controller = "PaymentSermepa", action = "Error" },
-                 new[] { "Nop.Plugin.Payments.Sermepa.Controllers" }
-            );
+                 new { controller = "PaymentSermepa", action = "Error" });
         }
+
         public int Priority
         {
             get

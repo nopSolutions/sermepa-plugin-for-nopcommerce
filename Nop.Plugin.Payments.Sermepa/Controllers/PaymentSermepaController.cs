@@ -1,9 +1,9 @@
 ﻿//Contributor: Noel Revuelta
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
@@ -12,7 +12,10 @@ using Nop.Services.Configuration;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
+using Nop.Services.Security;
+using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Payments.Sermepa.Controllers
 {
@@ -25,12 +28,16 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         private readonly ILogger _logger;
         private readonly SermepaPaymentSettings _sermepaPaymentSettings;
         private readonly PaymentSettings _paymentSettings;
+        private readonly IWebHelper _webHelper;
+        private readonly IPermissionService _permissionService;
 
         public PaymentSermepaController(ISettingService settingService, 
             IPaymentService paymentService, IOrderService orderService, 
             IOrderProcessingService orderProcessingService, 
             ILogger logger, SermepaPaymentSettings sermepaPaymentSettings,
-            PaymentSettings paymentSettings)
+            PaymentSettings paymentSettings,
+            IWebHelper webHelper,
+            IPermissionService permissionService)
         {
             this._settingService = settingService;
             this._paymentService = paymentService;
@@ -39,12 +46,22 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             this._logger = logger;
             this._sermepaPaymentSettings = sermepaPaymentSettings;
             this._paymentSettings = paymentSettings;
+            this._webHelper = webHelper;
+            this._permissionService = permissionService;
         }
-        
-        [AdminAuthorize]
-        [ChildActionOnly]
-        public ActionResult Configure()
+
+        private string GetValue(string key, IFormCollection form)
         {
+            return (form.Keys.Contains(key) ? form[key].ToString() : _webHelper.QueryString<string>(key)) ?? string.Empty;
+        }
+
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public IActionResult Configure()
+        {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+                return AccessDeniedView();
+
             var model = new ConfigurationModel
             {
                 NombreComercio = _sermepaPaymentSettings.NombreComercio,
@@ -63,10 +80,13 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         }
 
         [HttpPost]
-        [AdminAuthorize]
-        [ChildActionOnly]
-        public ActionResult Configure(ConfigurationModel model)
+        [AuthorizeAdmin]
+        [Area(AreaNames.Admin)]
+        public IActionResult Configure(ConfigurationModel model)
         {
+            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+                return AccessDeniedView();
+
             if (!ModelState.IsValid)
                 return Configure();
 
@@ -85,30 +105,10 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
 
             return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
-
-        [ChildActionOnly]
-        public ActionResult PaymentInfo()
+        
+        public IActionResult Return()
         {
-            return View("~/Plugins/Payments.Sermepa/Views/PaymentInfo.cshtml");
-        }
-
-        [NonAction]
-        public override IList<string> ValidatePaymentForm(FormCollection form)
-        {
-            var warnings = new List<string>();
-            return warnings;
-        }
-
-        [NonAction]
-        public override ProcessPaymentRequest GetPaymentInfo(FormCollection form)
-        {
-            var paymentInfo = new ProcessPaymentRequest();
-            return paymentInfo;
-        }
-
-        [ValidateInput(false)]
-        public ActionResult Return(FormCollection form)
-        {
+            var form = Request.Form;
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
             if (processor == null ||
                 !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
@@ -117,36 +117,30 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             //_logger.Information("TPV SERMEPA: Host " + Request.UserHostName);
 
             //ID de Pedido
-            var orderId = Request["Ds_Order"];
-            var strDs_Merchant_Order = Request["Ds_Order"];
+            var orderId = GetValue("Ds_Order", form);
+            var strDsMerchantOrder = GetValue("Ds_Order", form);
 
-            var strDs_Merchant_Amount = Request["Ds_Amount"];
-            var strDs_Merchant_MerchantCode = Request["Ds_MerchantCode"];
-            var strDs_Merchant_Currency = Request["Ds_Currency"];
+            var strDsMerchantAmount = GetValue("Ds_Amount", form);
+            var strDsMerchantMerchantCode = GetValue("Ds_MerchantCode", form);
+            var strDsMerchantCurrency = GetValue("Ds_Currency", form);
 
             //Respuesta del TPV
-            var str_Merchant_Response = Request["Ds_Response"];
-            var dsResponse = Convert.ToInt32(Request["Ds_Response"]);
+            var strMerchantResponse = GetValue("Ds_Response", form);
+            var dsResponse = Convert.ToInt32(GetValue("Ds_Response", form));
 
             //Clave
             var pruebas = _sermepaPaymentSettings.Pruebas;
             var clave = pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
             //Calculo de la firma
-            var sha = string.Format("{0}{1}{2}{3}{4}{5}",
-                strDs_Merchant_Amount,
-                strDs_Merchant_Order,
-                strDs_Merchant_MerchantCode,
-                strDs_Merchant_Currency,
-                str_Merchant_Response,
-                clave);
+            var sha = $"{strDsMerchantAmount}{strDsMerchantOrder}{strDsMerchantMerchantCode}{strDsMerchantCurrency}{strMerchantResponse}{clave}";
 
             SHA1 shaM = new SHA1Managed();
             var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
             var shaResultStr = BitConverter.ToString(shaResult).Replace("-", "");
 
             //Firma enviada
-            var signature = CommonHelper.EnsureNotNull(Request["Ds_Signature"]);
+            var signature = CommonHelper.EnsureNotNull(GetValue("Ds_Signature", form));
 
             //Comprobamos la integridad de las comunicaciones con las claves
             //LogManager.InsertLog(LogTypeEnum.OrderError, "TPV SERMEPA: Clave generada", "CLAVE GENERADA: " + SHAresultStr);
@@ -161,7 +155,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             //Pedido
             var order = _orderService.GetOrderById(Convert.ToInt32(orderId));
             if (order == null)
-                throw new NopException(string.Format("El pedido de ID {0} no existe", orderId));
+                throw new NopException($"El pedido de ID {orderId} no existe");
 
             //Actualizamos el pedido
             if (dsResponse > -1 && dsResponse < 100)
@@ -196,8 +190,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 
-        [ValidateInput(false)]
-        public ActionResult Error()
+        public IActionResult Error()
         {
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
             if (processor == null ||

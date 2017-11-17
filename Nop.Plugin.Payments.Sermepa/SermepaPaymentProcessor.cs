@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Routing;
+using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
@@ -114,14 +114,7 @@ namespace Nop.Plugin.Payments.Sermepa
             var clave = _sermepaPaymentSettings.Pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
             //Calculo de la firma
-            var sha = string.Format("{0}{1}{2}{3}{4}{5}{6}",
-                strDs_Merchant_Amount,
-                strDs_Merchant_Order,
-                strDs_Merchant_MerchantCode,
-                strDs_Merchant_Currency,
-                strDs_Merchant_TransactionType,
-                strDs_Merchant_MerchantURL,
-                clave);
+            var sha = $"{strDs_Merchant_Amount}{strDs_Merchant_Order}{strDs_Merchant_MerchantCode}{strDs_Merchant_Currency}{strDs_Merchant_TransactionType}{strDs_Merchant_MerchantURL}{clave}";
 
             SHA1 shaM = new SHA1Managed();
             var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
@@ -240,35 +233,32 @@ namespace Nop.Plugin.Payments.Sermepa
         public bool CanRePostProcessPayment(Order order)
         {
             if (order == null)
-                throw new ArgumentNullException("order");
+                throw new ArgumentNullException(nameof(order));
 
             return false;
         }
 
-        /// <summary>
-        /// Gets a route for provider configuration
-        /// </summary>
-        /// <param name="actionName">Action name</param>
-        /// <param name="controllerName">Controller name</param>
-        /// <param name="routeValues">Route values</param>
-        public void GetConfigurationRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues)
+        public IList<string> ValidatePaymentForm(IFormCollection form)
         {
-            actionName = "Configure";
-            controllerName = "PaymentSermepa";
-            routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
+            var warnings = new List<string>();
+            return warnings;
         }
 
-        /// <summary>
-        /// Gets a route for payment info
-        /// </summary>
-        /// <param name="actionName">Action name</param>
-        /// <param name="controllerName">Controller name</param>
-        /// <param name="routeValues">Route values</param>
-        public void GetPaymentInfoRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues)
+
+        public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
         {
-            actionName = "PaymentInfo";
-            controllerName = "PaymentSermepa";
-            routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.Sermepa.Controllers" }, { "area", null } };
+            var paymentInfo = new ProcessPaymentRequest();
+            return paymentInfo;
+        }
+
+        public override string GetConfigurationPageUrl()
+        {
+            return $"{_webHelper.GetStoreLocation()}Admin/PaymentSermepa/Configure";
+        }
+
+        public void GetPublicViewComponent(out string viewComponentName)
+        {
+            viewComponentName = "PaymentSermepa";
         }
 
         public Type GetControllerType()
@@ -278,7 +268,7 @@ namespace Nop.Plugin.Payments.Sermepa
 
         public override void Install()
         {
-            var settings = new SermepaPaymentSettings()
+            var settings = new SermepaPaymentSettings
             {
                 NombreComercio = "",
                 Titular = "",
