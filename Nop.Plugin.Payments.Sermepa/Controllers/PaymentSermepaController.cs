@@ -106,9 +106,9 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
         
-        public IActionResult Return()
+        public IActionResult Return(IpnModel model)
         {
-            var form = Request.Form;
+            var form = model.Form;
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
             if (processor == null ||
                 !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
@@ -169,7 +169,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 //order note
                 order.OrderNotes.Add(new OrderNote
                 {
-                    Note = "Información del pago: " + Request.Form,
+                    Note = "Información del pago: " + model.Form,
                     DisplayToCustomer = false,
                     CreatedOnUtc = DateTime.UtcNow
                 });
@@ -182,7 +182,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             //order note
             order.OrderNotes.Add(new OrderNote
             {
-                Note = "!!! PAGO DENEGADO !!! " + Request.Form,
+                Note = "!!! PAGO DENEGADO !!! " + model.Form,
                 DisplayToCustomer = false,
                 CreatedOnUtc = DateTime.UtcNow
             });
