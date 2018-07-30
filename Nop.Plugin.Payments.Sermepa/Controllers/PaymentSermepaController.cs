@@ -27,15 +27,13 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         private readonly IOrderProcessingService _orderProcessingService;
         private readonly ILogger _logger;
         private readonly SermepaPaymentSettings _sermepaPaymentSettings;
-        private readonly PaymentSettings _paymentSettings;
         private readonly IWebHelper _webHelper;
         private readonly IPermissionService _permissionService;
 
-        public PaymentSermepaController(ISettingService settingService, 
-            IPaymentService paymentService, IOrderService orderService, 
-            IOrderProcessingService orderProcessingService, 
+        public PaymentSermepaController(ISettingService settingService,
+            IPaymentService paymentService, IOrderService orderService,
+            IOrderProcessingService orderProcessingService,
             ILogger logger, SermepaPaymentSettings sermepaPaymentSettings,
-            PaymentSettings paymentSettings,
             IWebHelper webHelper,
             IPermissionService permissionService)
         {
@@ -45,7 +43,6 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             this._orderProcessingService = orderProcessingService;
             this._logger = logger;
             this._sermepaPaymentSettings = sermepaPaymentSettings;
-            this._paymentSettings = paymentSettings;
             this._webHelper = webHelper;
             this._permissionService = permissionService;
         }
@@ -105,13 +102,13 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
 
             return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
-        
+
         public IActionResult Return(IpnModel model)
         {
             var form = model.Form;
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
             if (processor == null ||
-                !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
+                !_paymentService.IsPaymentMethodActive(processor) || !processor.PluginDescriptor.Installed)
                 throw new NopException("Sermepa module cannot be loaded");
 
             //_logger.Information("TPV SERMEPA: Host " + Request.UserHostName);
@@ -194,7 +191,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         {
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
             if (processor == null ||
-                !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
+                !_paymentService.IsPaymentMethodActive(processor) || !processor.PluginDescriptor.Installed)
                 throw new NopException("Sermepa module cannot be loaded");
 
             return RedirectToAction("Index", "Home", new { area = "" });
