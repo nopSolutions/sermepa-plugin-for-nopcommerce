@@ -1,16 +1,14 @@
-﻿//Contributor: Noel Revuelta
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
-using Nop.Core.Plugins;
+using Nop.Plugin.Payments.Sermepa.Redsys;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Payments;
+using Nop.Services.Plugins;
 using Nop.Web.Framework;
 
 namespace Nop.Plugin.Payments.Sermepa
@@ -76,66 +74,49 @@ namespace Nop.Plugin.Payments.Sermepa
         /// <param name="postProcessPaymentRequest">Payment info required for an order processing</param>
         public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-            //Notificación On-Line
-            var strDs_Merchant_MerchantURL = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Return";
+            var ds_Merchant_Amount = ((int)Convert.ToInt64(postProcessPaymentRequest.Order.OrderTotal * 100)).ToString();
+            // You have to change the id of the orders table to begin with a number of at least 4 digits.
+            var ds_Merchant_Order = postProcessPaymentRequest.Order.Id.ToString("0000");
+            var ds_Merchant_MerchantCode = _sermepaPaymentSettings.FUC;
+            var ds_Merchant_Currency = _sermepaPaymentSettings.Moneda;
+            var ds_Merchant_TransactionType = "0";
+            var ds_Merchant_Terminal = _sermepaPaymentSettings.Terminal;
+            var ds_Merchant_MerchantURL = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Return";
+            var ds_Merchant_UrlOK = _webHelper.GetStoreLocation(false) + "checkout/completed";
+            var ds_Merchant_UrlKO = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Error";
 
-            //URL OK
-            var strDs_Merchant_UrlOK = _webHelper.GetStoreLocation(false) + "checkout/completed";
+            var key = _sermepaPaymentSettings.Pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
-            //URL KO
-            var strDs_Merchant_UrlKO = _webHelper.GetStoreLocation(false) + "Plugins/PaymentSermepa/Error";
+            // New instance of RedysAPI
+            var redsysApi = new RedsysAPI();
 
-            //Numero de pedido
-            //You have to change the id of the orders table to begin with a number of at least 4 digits.
-            var strDs_Merchant_Order = postProcessPaymentRequest.Order.Id.ToString("0000");
+            // Main Key 
+            // Fill Ds_MerchantParameters parameters
+            redsysApi.SetParameter("DS_MERCHANT_AMOUNT", ds_Merchant_Amount);
+            redsysApi.SetParameter("DS_MERCHANT_ORDER", ds_Merchant_Order);
+            redsysApi.SetParameter("DS_MERCHANT_MERCHANTCODE", ds_Merchant_MerchantCode);
+            redsysApi.SetParameter("DS_MERCHANT_CURRENCY", ds_Merchant_Currency);
+            redsysApi.SetParameter("DS_MERCHANT_TRANSACTIONTYPE", ds_Merchant_TransactionType);
+            redsysApi.SetParameter("DS_MERCHANT_TERMINAL", ds_Merchant_Terminal);
+            redsysApi.SetParameter("DS_MERCHANT_MERCHANTURL", ds_Merchant_MerchantURL);
+            redsysApi.SetParameter("DS_MERCHANT_URLOK", ds_Merchant_UrlOK);
+            redsysApi.SetParameter("DS_MERCHANT_URLKO", ds_Merchant_UrlKO);
 
-            //Nombre del comercio
-            var strDs_Merchant_MerchantName = _sermepaPaymentSettings.NombreComercio;
+            // Calculate Ds_MerchantParameters
+            var ds_MerchantParameters = redsysApi.createMerchantParameters();
 
-            //Importe
-            var amount = ((int)Convert.ToInt64(postProcessPaymentRequest.Order.OrderTotal * 100)).ToString();
-            var strDs_Merchant_Amount = amount;
+            // Calculate Ds_Signature
+            var ds_Signature = redsysApi.createMerchantSignature(key);
 
-            //Código de comercio
-            var strDs_Merchant_MerchantCode = _sermepaPaymentSettings.FUC;
-
-            //Moneda
-            var strDs_Merchant_Currency = _sermepaPaymentSettings.Moneda;
-
-            //Terminal
-            var strDs_Merchant_Terminal = _sermepaPaymentSettings.Terminal;
-
-            //Tipo de transaccion (0 - Autorización)
-            var strDs_Merchant_TransactionType = "0";
-
-            //Clave
-            var clave = _sermepaPaymentSettings.Pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
-
-            //Calculo de la firma
-            var sha = $"{strDs_Merchant_Amount}{strDs_Merchant_Order}{strDs_Merchant_MerchantCode}{strDs_Merchant_Currency}{strDs_Merchant_TransactionType}{strDs_Merchant_MerchantURL}{clave}";
-
-            SHA1 shaM = new SHA1Managed();
-            var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
-            var shaResultStr = BitConverter.ToString(shaResult).Replace("-", "");
-
-            //Creamos el POST
             var remotePostHelper = new RemotePost
             {
                 FormName = "form1",
                 Url = GetSermepaUrl()
             };
 
-            remotePostHelper.Add("Ds_Merchant_Amount", strDs_Merchant_Amount);
-            remotePostHelper.Add("Ds_Merchant_Currency", strDs_Merchant_Currency);
-            remotePostHelper.Add("Ds_Merchant_Order", strDs_Merchant_Order);
-            remotePostHelper.Add("Ds_Merchant_MerchantCode", strDs_Merchant_MerchantCode);
-            remotePostHelper.Add("Ds_Merchant_TransactionType", strDs_Merchant_TransactionType);
-            remotePostHelper.Add("Ds_Merchant_MerchantURL", strDs_Merchant_MerchantURL);
-            remotePostHelper.Add("Ds_Merchant_MerchantSignature", shaResultStr);
-            remotePostHelper.Add("Ds_Merchant_Terminal", strDs_Merchant_Terminal);
-            remotePostHelper.Add("Ds_Merchant_MerchantName", strDs_Merchant_MerchantName);
-            remotePostHelper.Add("Ds_Merchant_UrlOK", strDs_Merchant_UrlOK);
-            remotePostHelper.Add("Ds_Merchant_UrlKO", strDs_Merchant_UrlKO);
+            remotePostHelper.Add("Ds_SignatureVersion", "HMAC_SHA256_V1");
+            remotePostHelper.Add("Ds_MerchantParameters", ds_MerchantParameters);
+            remotePostHelper.Add("Ds_Signature", ds_Signature);
 
             remotePostHelper.Post();
         }
