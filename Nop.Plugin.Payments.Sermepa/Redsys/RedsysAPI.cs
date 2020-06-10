@@ -6,8 +6,9 @@ using Newtonsoft.Json;
 namespace Nop.Plugin.Payments.Sermepa.Redsys
 {
     /// <summary>
-    /// <see cref="https://pagosonline.redsys.es/conexion-redireccion.html#envio-peticionRedireccion"/>
+    /// NOTE: Extracted from Redsys help libraries
     /// </summary>
+    /// <see cref="https://pagosonline.redsys.es/descargas.html"/>
     public class RedsysAPI
     {
 

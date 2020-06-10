@@ -7,11 +7,12 @@ namespace Nop.Plugin.Payments.Sermepa.Redsys
     public class Cryptogra
     {
         /// <summary>
-        /// <see cref="https://pagosonline.redsys.es/conexion-redireccion.html#envio-peticionRedireccion"/>
         /// calculate HMAC SHA-256
+        /// (NOTE: Extracted from Redsys help libraries)
         /// </summary>
         /// <param name="msg"></param>
         /// <param name="key"></param>
+        /// <see cref="https://pagosonline.redsys.es/descargas.html"/>
         /// <returns>byte[] with the result</returns>
         public byte[] GetHMACSHA256(string msg, byte[] key)
         {
