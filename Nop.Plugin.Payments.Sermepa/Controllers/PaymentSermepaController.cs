@@ -154,26 +154,28 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 }
 
                 //order note
-                order.OrderNotes.Add(new OrderNote
+                _orderService.InsertOrderNote(new OrderNote
                 {
+                    OrderId = order.Id,
                     Note = "Información del pago: " + decodedMerchantParameters,
                     DisplayToCustomer = false,
                     CreatedOnUtc = DateTime.UtcNow
                 });
-                _orderService.UpdateOrder(order);
+
                 return RedirectToRoute("CheckoutCompleted", new { orderId = order.Id });
             }
 
             _logger.Error("TPV SERMEPA: Pago no autorizado con ERROR: " + dsResponse);
 
             //order note
-            order.OrderNotes.Add(new OrderNote
+            _orderService.InsertOrderNote(new OrderNote
             {
+                OrderId = order.Id,
                 Note = "!!! PAGO DENEGADO !!! " + decodedMerchantParameters,
                 DisplayToCustomer = false,
                 CreatedOnUtc = DateTime.UtcNow
             });
-            _orderService.UpdateOrder(order);
+
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 
