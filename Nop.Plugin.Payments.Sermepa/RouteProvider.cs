@@ -6,25 +6,17 @@ namespace Nop.Plugin.Payments.Sermepa
 {
     public partial class RouteProvider : IRouteProvider
     {
-        public void RegisterRoutes(IRouteBuilder routeBuilder)
+        public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder)
         {
             //Return
-            routeBuilder.MapRoute("Plugin.Payments.Sermepa.Return",
-                 "Plugins/PaymentSermepa/Return",
+            endpointRouteBuilder.MapControllerRoute("Plugin.Payments.Sermepa.Return", "Plugins/PaymentSermepa/Return",
                  new { controller = "PaymentSermepa", action = "Return" });
 
             //Error
-            routeBuilder.MapRoute("Plugin.Payments.Sermepa.Error",
-                 "Plugins/PaymentSermepa/Error",
+            endpointRouteBuilder.MapControllerRoute("Plugin.Payments.Sermepa.Error", "Plugins/PaymentSermepa/Error",
                  new { controller = "PaymentSermepa", action = "Error" });
         }
 
-        public int Priority
-        {
-            get
-            {
-                return 0;
-            }
-        }
+        public int Priority => -1;
     }
 }

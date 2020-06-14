@@ -1,13 +1,9 @@
-﻿//Contributor: Noel Revuelta
-using System;
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.AspNetCore.Http;
+﻿using System;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Payments;
 using Nop.Plugin.Payments.Sermepa.Models;
+using Nop.Plugin.Payments.Sermepa.Redsys;
 using Nop.Services.Configuration;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
@@ -29,13 +25,15 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
         private readonly SermepaPaymentSettings _sermepaPaymentSettings;
         private readonly IWebHelper _webHelper;
         private readonly IPermissionService _permissionService;
+        private readonly IPaymentPluginManager _paymentPluginManager;
 
         public PaymentSermepaController(ISettingService settingService,
             IPaymentService paymentService, IOrderService orderService,
             IOrderProcessingService orderProcessingService,
             ILogger logger, SermepaPaymentSettings sermepaPaymentSettings,
             IWebHelper webHelper,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IPaymentPluginManager paymentPluginManager)
         {
             this._settingService = settingService;
             this._paymentService = paymentService;
@@ -45,11 +43,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             this._sermepaPaymentSettings = sermepaPaymentSettings;
             this._webHelper = webHelper;
             this._permissionService = permissionService;
-        }
-
-        private string GetValue(string key, IFormCollection form)
-        {
-            return (form.Keys.Contains(key) ? form[key].ToString() : _webHelper.QueryString<string>(key)) ?? string.Empty;
+            _paymentPluginManager = paymentPluginManager;
         }
 
         [AuthorizeAdmin]
@@ -103,51 +97,46 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
             return View("~/Plugins/Payments.Sermepa/Views/Configure.cshtml", model);
         }
 
-        public IActionResult Return(IpnModel model)
+        /// <summary>
+        /// <see cref="https://pagosonline.redsys.es/conexion-redireccion.html#envio-peticionRedireccion"/>
+        /// </summary>
+        /// <param name="ipn"></param>
+        /// <returns></returns>
+        public IActionResult Return(IpnModel ipn)
         {
-            var form = model.Form;
-            var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
-            if (processor == null ||
-                !_paymentService.IsPaymentMethodActive(processor) || !processor.PluginDescriptor.Installed)
+            if (!(_paymentPluginManager.LoadPluginBySystemName("Payments.Sermepa") is SermepaPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
                 throw new NopException("Sermepa module cannot be loaded");
 
-            //_logger.Information("TPV SERMEPA: Host " + Request.UserHostName);
+            var isTestMode = _sermepaPaymentSettings.Pruebas;
+            var key = isTestMode ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
 
-            //ID de Pedido
-            var orderId = GetValue("Ds_Order", form);
-            var strDsMerchantOrder = GetValue("Ds_Order", form);
+            var redsysApi = new RedsysAPI();
 
-            var strDsMerchantAmount = GetValue("Ds_Amount", form);
-            var strDsMerchantMerchantCode = GetValue("Ds_MerchantCode", form);
-            var strDsMerchantCurrency = GetValue("Ds_Currency", form);
-
-            //Respuesta del TPV
-            var strMerchantResponse = GetValue("Ds_Response", form);
-            var dsResponse = Convert.ToInt32(GetValue("Ds_Response", form));
-
-            //Clave
-            var pruebas = _sermepaPaymentSettings.Pruebas;
-            var clave = pruebas ? _sermepaPaymentSettings.ClavePruebas : _sermepaPaymentSettings.ClaveReal;
-
-            //Calculo de la firma
-            var sha = $"{strDsMerchantAmount}{strDsMerchantOrder}{strDsMerchantMerchantCode}{strDsMerchantCurrency}{strMerchantResponse}{clave}";
-
-            SHA1 shaM = new SHA1Managed();
-            var shaResult = shaM.ComputeHash(Encoding.Default.GetBytes(sha));
-            var shaResultStr = BitConverter.ToString(shaResult).Replace("-", "");
-
-            //Firma enviada
-            var signature = CommonHelper.EnsureNotNull(GetValue("Ds_Signature", form));
-
-            //Comprobamos la integridad de las comunicaciones con las claves
-            //LogManager.InsertLog(LogTypeEnum.OrderError, "TPV SERMEPA: Clave generada", "CLAVE GENERADA: " + SHAresultStr);
-            //LogManager.InsertLog(LogTypeEnum.OrderError, "TPV SERMEPA: Clave obtenida", "CLAVE OBTENIDA: " + signature);
-            if (!signature.Equals(shaResultStr))
+            if (string.IsNullOrEmpty(ipn.Ds_SignatureVersion) ||
+                string.IsNullOrEmpty(ipn.Ds_MerchantParameters) ||
+                string.IsNullOrEmpty(ipn.Ds_Signature))
             {
-                _logger.Error("TPV SERMEPA: Clave incorrecta. Las claves enviada y generada no coinciden: " + shaResultStr + " != " + signature);
+                _logger.Error("TPV SERMEPA: Missing data.");
 
                 return RedirectToAction("Index", "Home", new { area = "" });
             }
+
+            // Decode Base 64 data
+            var decodedMerchantParameters = redsysApi.decodeMerchantParameters(ipn.Ds_MerchantParameters);
+
+            // Get Signature notificacion
+            var signatureNotif = redsysApi.createMerchantSignatureNotif(key, ipn.Ds_MerchantParameters);
+
+            // Check if signature received is the same than signature notificacion previously calculated
+            if (signatureNotif != ipn.Ds_Signature)
+            {
+                _logger.Error("TPV SERMEPA: Clave incorrecta. Las claves enviada y generada no coinciden: " + ipn.Ds_Signature + " != " + signatureNotif);
+
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+
+            //ID de Pedido
+            var orderId = redsysApi.GetParameter("Ds_Order");
 
             //Pedido
             var order = _orderService.GetOrderById(Convert.ToInt32(orderId));
@@ -155,6 +144,7 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 throw new NopException($"El pedido de ID {orderId} no existe");
 
             //Actualizamos el pedido
+            var dsResponse = Convert.ToInt32(redsysApi.GetParameter("Ds_Response"));
             if (dsResponse > -1 && dsResponse < 100)
             {
                 //Lo marcamos como pagado
@@ -164,34 +154,34 @@ namespace Nop.Plugin.Payments.Sermepa.Controllers
                 }
 
                 //order note
-                order.OrderNotes.Add(new OrderNote
+                _orderService.InsertOrderNote(new OrderNote
                 {
-                    Note = "Información del pago: " + model.Form,
+                    OrderId = order.Id,
+                    Note = "Información del pago: " + decodedMerchantParameters,
                     DisplayToCustomer = false,
                     CreatedOnUtc = DateTime.UtcNow
                 });
-                _orderService.UpdateOrder(order);
+
                 return RedirectToRoute("CheckoutCompleted", new { orderId = order.Id });
             }
 
             _logger.Error("TPV SERMEPA: Pago no autorizado con ERROR: " + dsResponse);
 
             //order note
-            order.OrderNotes.Add(new OrderNote
+            _orderService.InsertOrderNote(new OrderNote
             {
-                Note = "!!! PAGO DENEGADO !!! " + model.Form,
+                OrderId = order.Id,
+                Note = "!!! PAGO DENEGADO !!! " + decodedMerchantParameters,
                 DisplayToCustomer = false,
                 CreatedOnUtc = DateTime.UtcNow
             });
-            _orderService.UpdateOrder(order);
+
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 
         public IActionResult Error()
         {
-            var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.Sermepa") as SermepaPaymentProcessor;
-            if (processor == null ||
-                !_paymentService.IsPaymentMethodActive(processor) || !processor.PluginDescriptor.Installed)
+            if (!(_paymentPluginManager.LoadPluginBySystemName("Payments.Sermepa") is SermepaPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
                 throw new NopException("Sermepa module cannot be loaded");
 
             return RedirectToAction("Index", "Home", new { area = "" });
